@@ -1,0 +1,120 @@
+name: NetSurfP3_CNNbLSTM
+save_dir: saved/nsp3
+seed: 1234
+target_devices: [0]
+
+arch:
+  type: CNNbLSTM
+  args:
+    init_n_channels: 1280
+    out_channels: 32
+    cnn_layers: 2
+    kernel_size: [129, 257]
+    padding: [64, 128]
+    n_hidden: 1024
+    dropout: 0.5
+    lstm_layers: 2
+
+dataloaders:
+  training:
+    paths: [data/nsp2/training_data/TrainValidate_HHblits_embeddings.h5]
+    type: BasicDataLoader
+    args:
+      batch_size: 16
+      num_workers: 2
+      shuffle: true
+#      validation_split: 0.05
+      validation_indices: [83, 122, 256, 325, 443, 528, 671, 709, 736, 771, 779, 817, 827, 954, 989, 1025, 1232, 1288,
+                           1586, 1629, 1673, 1762, 1792, 2211, 2284, 2415, 2430, 2703, 2958, 2973, 3036, 3144, 3252,
+                           3321, 3344, 3361, 3383, 3426, 3534, 3582, 3704, 3943, 4139, 5067, 5138, 5289, 5306, 5316,
+                           5338, 5441, 5539, 5558, 5587, 5676, 5890, 5969, 6114, 6167, 6186, 6206, 6320, 6525, 6646,
+                           6748, 7107, 7159, 7265, 7283, 7697, 7744, 7889, 8014, 8062, 8229, 8280, 8350, 8490, 8511,
+                           8533, 8581, 8629, 8696, 8856, 9094, 9121, 9263, 9284, 9313, 9427, 9454, 9585, 9647, 9811,
+                           9873, 9899, 9922, 9930, 9984, 10211, 10237, 10291, 10335, 10494, 10682, 10795]
+    dataset:
+      type: H5TrainEvalDataset
+      args:
+        embedding_features: 1280
+        label_names: [ss8, dis, rsa, phi, psi]
+        label_sizes: [1, 1, 1, 1, 1]
+  testing:
+    paths: [data/nsp2/training_data/CASP12_HHblits_embeddings.h5,
+            data/nsp2/training_data/TS115_HHblits_embeddings.h5,
+            data/nsp2/training_data/CB513_HHblits_embeddings.h5]
+    type: BasicDataLoader
+    args:
+      batch_size: 16
+      num_workers: 2
+      shuffle: false
+    dataset:
+        type: H5TrainEvalDataset
+        args:
+          embedding_features: 1280
+          label_names: [ss8, dis, rsa, phi, psi]
+          label_sizes: [1, 1, 1, 1, 1]
+  prediction:
+    type: BasicDataLoader
+    args:
+      batch_size: 1
+      num_workers: 2
+      shuffle: false
+    dataset:
+      type: H5PredictionDataset
+      args:
+        embedding_features: 1280
+#        label_names: [ss8, dis, rsa, phi, psi]
+#        label_sizes: [1, 1, 1, 1, 1]
+
+prediction:
+  allow_cuda: True
+  log_step: 64
+#  data_transform:
+#    type: ESM1bTokenize
+  saver:
+    type: H5Saver
+    args:
+#      embedding_features: 1280
+      label_names: [ss8, dis, rsa, phi, psi]
+#      label_sizes: [1, 1, 1, 1, 1]
+      label_sizes: [8, 1, 1, 1, 1]
+#      target_is_output_labels: True
+#      data_is_output_embeddings: True
+    labels_transform: multi_task_save_output
+
+training:
+  early_stop: 3
+  epochs: 100
+  monitor: min val_loss
+  save_period: 1
+  log_step: 1
+  tensorboard: true
+
+optimizer:
+  type: AdamW
+  args:
+    lr: 5.0e-05
+#    lr: 3.0e-4
+#    weight_decay: 1.0e-2
+#    momentum: 0.9
+
+lr_scheduler:
+  type: null
+
+multitask_loss:
+#  type: AutomaticWeightedLoss
+  type: WeightedLoss
+  args:
+    loss_names: [ss8_ce, ss3_ce, dis_bce, rsa_bce, phi_mse, psi_mse]
+    loss_weights: [2, 5, 100, 100, 1, 1]
+#    loss_weights: [1, 1, 1, 1, 1, 1]
+    loss_args: [
+      {class_weights: [3.4544281323665444, 0.38954638039754946, 24.420246800731263, 13.08855285472018, 0.6159643976383329, 1.645752282839962, 1.2218757805930924, 0.5059277813629418]},
+      {class_weights: [0.7749903350677214, 1.9029054799558662, 0.8444882123106242]},
+      {positive_weight: 7.735460017484172},
+      {positive_weight: 0.6093741981018069},
+      {},
+      {},
+#      {}
+    ]
+
+metrics: [ss8_accuracy, ss3_accuracy, dis_mcc, dis_fpr, rsa_pcc, phi_mae, psi_mae]

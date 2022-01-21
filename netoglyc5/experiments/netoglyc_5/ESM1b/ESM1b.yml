@@ -1,0 +1,36 @@
+name: ESM1b
+save_dir: saved/esm1b
+target_devices: [0]
+
+arch:
+  type: ESM1bEmbedding
+  embedding: True
+  args:
+    # embedding_pretrained: "models/esm1b_t33_650M_UR50S.pt"
+    max_embedding: 1024
+    concat_overlap: 200
+
+dataloaders:
+  prediction:
+    type: BasicDataLoader
+    args:
+      batch_size: 1
+      num_workers: 2
+      shuffle: False
+    dataset:
+#      type: NSPPredictionDataset
+      type: FastaPredictionDataset
+
+prediction:
+  allow_cuda: True
+  log_step: 64
+  data_transform:
+    type: ESM1bTokenize
+  saver:
+    type: H5Saver
+    args:
+      embedding_features: 1280
+#      label_names: [ss8, dis, rsa, phi, psi]
+#      label_sizes: [1, 1, 1, 1, 1]
+#      target_is_label_output: True
+#    labels_transform: multi_task_save

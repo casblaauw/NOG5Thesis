@@ -1,0 +1,71 @@
+name: NetSurfP3_ESM1b_Linear
+save_dir: saved/nsp3
+seed: 1234
+target_devices: [0]
+
+arch:
+  type: ESM1b_Linear
+  args:
+    in_features: 1280
+    # embedding_pretrained: "models/esm1b_t33_650M_UR50S.pt"
+
+dataloaders:
+  training:
+    paths: [data/nsp2/training_data/Train_HHblits.npz]
+    type: BasicDataLoader
+    args:
+      batch_size: 10
+      num_workers: 2
+      shuffle: true
+      validation_split: 0.05
+    dataset:
+      type: NSPData
+      args:
+        only_encoding: True
+  testing:
+    paths: [data/nsp2/training_data/CASP12_HHblits.npz,
+            data/nsp2/training_data/CB513_HHblits.npz,
+            data/nsp2/training_data/TS115_HHblits.npz]
+    type: BasicDataLoader
+    args:
+      batch_size: 10
+      num_workers: 2
+      shuffle: false
+  dataset:
+    type: NSPData
+    args:
+      only_encoding: True
+
+predictor:
+  type: Fasta_to_SecondaryFeatures
+  allow_cuda: False
+  args:
+    batch_size: 10
+    log_step: 1
+  saver:
+    type: H5Saver
+    args:
+      label_names: [ss8, ss3, dis, rsa, phi, psi]
+      label_sizes: [8, 3, 2, 1, 1, 1]
+
+loss: multi_task_loss
+
+metrics: [ metric_ss8, metric_ss3, metric_dis_mcc, metric_dis_fpr,
+           metric_rsa, metric_phi, metric_psi ]
+
+optimizer:
+  type: Adam
+  args:
+    lr: 0.0005
+    weight_decay: 0
+
+lr_scheduler: 
+  type: null
+
+training:
+  early_stop: 3
+  epochs: 100
+  monitor: min val_loss
+  save_period: 1
+  log_step: 1
+  tensorboard: true

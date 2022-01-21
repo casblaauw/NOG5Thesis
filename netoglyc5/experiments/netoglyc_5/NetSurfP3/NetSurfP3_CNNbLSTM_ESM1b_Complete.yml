@@ -1,0 +1,93 @@
+name: NetSurfP3_CNNbLSTM_ESM1b_Complete
+save_dir: saved/nsp3
+seed: 1234
+target_devices: [0]
+
+arch:
+  type: CNNbLSTM_ESM1b_Complete
+  args:
+    init_n_channels: 1280
+    out_channels: 32
+    cnn_layers: 2
+    kernel_size: [129, 257]
+    padding: [64, 128]
+    n_hidden: 1024
+    dropout: 0.5
+    lstm_layers: 2
+
+dataloaders:
+  training:
+    paths: [data/nsp2/training_data/Train_HHblits.npz]
+    type: BasicDataLoader
+    args:
+      batch_size: 10
+      num_workers: 0
+      shuffle: true
+      validation_split: 0.05
+    dataset:
+      type: NSPTrainEvalDataset
+  testing:
+    paths: [data/nsp2/training_data/CASP12_HHblits.npz,
+            data/nsp2/training_data/CB513_HHblits.npz,
+            data/nsp2/training_data/TS115_HHblits.npz]
+    type: BasicDataLoader
+    args:
+      batch_size: 10
+      num_workers: 0
+      shuffle: false
+    dataset:
+      type: NSPTrainEvalDataset
+  prediction:
+    type: BasicDataLoader
+    args:
+      batch_size: 8
+      num_workers: 0
+      shuffle: False
+    dataset:
+      type: FastaPredictionDataset
+
+loss: multi_task_loss
+
+metrics: [ metric_ss8, metric_ss3, metric_dis_mcc, metric_dis_fpr,
+           metric_rsa, metric_phi, metric_psi ]
+
+optimizer:
+  type: Adam
+  args:
+    lr: 2.763972049568587e-05
+    weight_decay: 0
+
+lr_scheduler:
+  type: null
+
+training:
+  early_stop: 2
+  epochs: 10
+  monitor: min val_loss
+  save_period: 1
+  log_step: 1
+  tensorboard: true
+  data_transform:
+    type: sparse_token
+    args: {}
+
+testing:
+  data_transform:
+    type: sparse_token
+    args: {}
+
+prediction:
+  allow_cuda: False
+  log_step: 1
+  saver:
+    type: H5Saver
+    args:
+      # model_embedding_features: 1280
+      label_names: [ ss8, ss3, dis, rsa, phi, psi ]
+      label_sizes: [ 8, 3, 2, 1, 2, 2 ]
+  data_transform:
+    type: string_token
+    args: {}
+  # mask_transform:
+  #  type:
+  #  args: {}

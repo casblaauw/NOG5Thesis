@@ -1,0 +1,17 @@
+biopython>=1.78,<2
+click>=7.1.2,<9
+fair-esm>=0.4.0,<1
+h5py>=3.6.0,<4
+matplotlib>=3.4.1,<4
+numpy>=1.20.2,<2
+optuna>=2.8.0,<3
+pandas>=1.2.3,<2
+pytest>=6.2.2,<7
+pyyaml>=5.4.1,<7
+scikit-learn>=0.24.2
+scipy>=1.6.2,<2
+setuptools>=49.6.0,<59.6.0 # some bug in 59.6.0
+tensorboard>=1.15,<3
+torch>=1.10.0,<2
+torchvision>=0.9.0,<1
+typing-extensions>=3.7.4.3,<5
