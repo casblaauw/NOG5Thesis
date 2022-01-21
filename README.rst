@@ -123,7 +123,7 @@ Config files are in `.yml` format:
 
 	dataloaders:
 	  training:
-	    paths: ["Data/NetOGlyc5 data/GalNAc data/05-embedding/protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
+	    paths: ["protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
 	    type: BasicDataLoader
 	    args:
 	      batch_size: 16
@@ -140,7 +140,7 @@ Config files are in `.yml` format:
 		label_names: [ss8, dis, rsa, phi, psi, gly]
 		label_sizes: [8, 1, 1, 1, 1, 1]
 	  testing:
-	    paths: ["Data/NetOGlyc5 data/GalNAc data/05-embedding/protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
+	    paths: ["protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
 	    type: BasicDataLoader
 	    args:
 	      batch_size: 16
@@ -155,7 +155,7 @@ Config files are in `.yml` format:
 		label_names: [ss8, dis, rsa, phi, psi, gly]
 		label_sizes: [8, 1, 1, 1, 1, 1]
 	  prediction:
-	    paths: ["Data/NetOGlyc5 data/GalNAc data/05-embedding/protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
+	    paths: ["protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
 	    type: BasicDataLoader
 	    args:
 	      batch_size: 8
