@@ -1,12 +1,12 @@
 ====
-**Thesis**: NetOGlyc 5.0 Human O-GalNAc Prediction
+**Thesis**: Prediction of protein O-glycosylation using language models
 ====
 
 The repository contains the source code for the updated version of NetOGlyc, which replaces external tools with embeddings from the pretrained model ESM-1b.
 
 
 .. contents:: Table of Contents
-   :depth: 4
+   :depth: 2
 
 Folder Structure
 ================
@@ -15,9 +15,9 @@ Folder Structure
 
   NOG5Thesis/
   │
-  ├── netoglyc5/
+  ├── netoglyc5/ - model training/prediction library based on NetSurfP-3.0
   │    │
-  │    ├── nog5/nog5/ - model training/prediction library based on NetSurfP-3.0
+  │    ├── nog5/nog5/
   │    │    │
   │    │    ├── logging.yml - logging configuration
   │    │    ├── cli.py - command line interface
@@ -61,7 +61,7 @@ Folder Structure
   │
   ├── notebooks/ - directory of notebooks used for data pipeline
   │
-  └── glyc_processing/glyc_processing/ - MS-peptide glycosylation data cleaning library
+  └── glyc_processing - MS-peptide glycosylation data cleaning library
 
 
 Usage
@@ -211,7 +211,7 @@ Config files are in `.yml` format:
 	metrics: [ss8_pcc, ss3_pcc, dis_pcc, rsa_pcc, phi_mae, psi_mae, gly_pcc, gly_unambiguous_pcc, gly_mcc, gly_unambiguous_mcc, gly_fpr, gly_fnr]
 
 
-Add additonal configurations if you need.
+Add additional configurations if you need.
 
 Using config files
 ------------------
