@@ -236,35 +236,15 @@ def gly_pcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     #print(metric)
     return metric
 
-
-def gly_unambiguous_pcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
-    """ Returns glycosylation metric
+def gly_definite_mcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
+    """ Returns glycosylation metric solely for definite sites (0 or 1)
     Args:
         outputs: tensor with predicted values
         labels: tensor with correct values
     """
-    mask = get_mask(labels, ['unambiguous_glycosylation_mask', 'unknown_mask']).squeeze(2)
-    outputs = torch.sigmoid(outputs['gly']).squeeze(2)[mask == 1]
-    labels = labels['gly'].squeeze(2)[mask == 1]
-
-    #print('gly_unambiguous_pcc')
-    #print(outputs.shape, outputs)
-    #print(labels.shape, labels)
-    #print(mask.shape, mask.sum())
-    metric = pcc(outputs, labels)
-    #print(metric)
-    return metric
-
-
-def gly_mcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
-    """ Returns glycosylation metric
-    Args:
-        outputs: tensor with predicted values
-        labels: tensor with correct values
-    """
-    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask']).squeeze(2)
     outputs = (torch.sigmoid(outputs['gly']) >= threshold).squeeze(2)[mask == 1]
-    labels = (labels['gly'] >= threshold).squeeze(2)[mask == 1]
+    labels = labels['gly'].squeeze(2)[mask == 1]
 
     #print('gly_mcc')
     #print(outputs.shape, outputs)
@@ -275,59 +255,21 @@ def gly_mcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: fl
     return metric
 
 
-def gly_unambiguous_mcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
-    """ Returns glycosylation metric
+def gly_ambiguous_mcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
+    """ Returns glycosylation metric solely for ambiguous sites (>0 and <1)
     Args:
         outputs: tensor with predicted values
         labels: tensor with correct values
     """
-    mask = get_mask(labels, ['unambiguous_glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'unknown_mask']).squeeze(2)
     outputs = (torch.sigmoid(outputs['gly']) >= threshold).squeeze(2)[mask == 1]
-    labels = labels['gly'].squeeze(2)[mask == 1]
+    labels = (labels['gly'] >= threshold).squeeze(2)[mask == 1]
 
     #print('gly_unambiguous_mcc')
     #print(outputs.shape, outputs)
     #print(labels.shape, labels)
     #print(mask.shape, mask.sum())
     metric = mcc(outputs, labels)
-    #print(metric)
-    return metric
-
-
-def gly_accuracy(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
-    """ Returns glycosylation metric
-    Args:
-        outputs: tensor with predicted values
-        labels: tensor with correct values
-    """
-    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']).squeeze(2)
-    outputs = (torch.sigmoid(outputs['gly']) >= threshold).squeeze(2)[mask == 1]
-    labels = (labels['gly'] >= threshold).squeeze(2)[mask == 1]
-
-    #print('gly_accuracy')
-    #print(outputs.shape, outputs)
-    #print(labels.shape, labels)
-    #print(mask.shape, mask.sum())
-    metric = accuracy(outputs, labels)
-    #print(metric)
-    return metric
-
-
-def gly_unambiguous_accuracy(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
-    """ Returns glycosylation metric
-    Args:
-        outputs: tensor with predicted values
-        labels: tensor with correct values
-    """
-    mask = get_mask(labels, ['unambiguous_glycosylation_mask', 'unknown_mask']).squeeze(2)
-    outputs = (torch.sigmoid(outputs['gly']) >= threshold).squeeze(2)[mask == 1]
-    labels = labels['gly'].squeeze(2)[mask == 1]
-
-    #print('gly_unambiguous_accuracy')
-    #print(outputs.shape, outputs)
-    #print(labels.shape, labels)
-    #print(mask.shape, mask.sum())
-    metric = accuracy(outputs, labels)
     #print(metric)
     return metric
 

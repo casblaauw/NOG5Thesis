@@ -14,7 +14,7 @@ dataloaders:
     paths: ["/home/jakob/Cloudvault_new/Data/NetOGlyc5 data/GalNAc data/05-embedding/protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
     type: BasicDataLoader
     args:
-      batch_size: 512
+      batch_size: 256
       num_workers: 1
       shuffle: true
 #      validation_split: 0.05
@@ -89,7 +89,7 @@ prediction:
 training:
   early_stop: 10
   epochs: 100
-  monitor: min val_loss
+  monitor: min val_gly_pcc
   save_period: 1
   log_step: 1
   tensorboard: true
@@ -109,8 +109,8 @@ multitask_loss:
 #  type: AutomaticWeightedLoss
   type: WeightedLoss
   args:
-    loss_names: [gly_mse, gly_unambiguous_mse]
-    loss_weights: [1e-2, 1]
-#    loss_args: [{}, {}, {}, {}, {}, {}]
+    loss_names: [gly_definite_mse]
+    loss_weights: [2000]
+    loss_args: [{positive_weight: 0.01}]
 
-metrics: [gly_pcc, gly_unambiguous_pcc, gly_mcc, gly_unambiguous_mcc, gly_fpr, gly_fnr]
+metrics: [gly_pcc, gly_definite_mcc, gly_ambiguous_mcc, gly_fpr, gly_fnr]

@@ -253,18 +253,18 @@ def gly_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weig
     return loss
 
 
-def gly_unambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss
+def gly_definite_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
     Args:
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['unambiguous_glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask']).squeeze(2)
 
     outputs = outputs['gly'].squeeze(2)
     labels = labels['gly'].squeeze(2).float()
 
-    #print('gly_mse')
+    #print('gly_definite_mse')
     #print(outputs.shape)
     #print(labels.shape)
     #print(mask.shape, mask.sum())
@@ -273,38 +273,38 @@ def gly_unambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], p
     return loss
 
 
-def gly_all_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss
+def gly_definite_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
     Args:
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['seen']).squeeze(2)
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask']).squeeze(2)
 
     outputs = outputs['gly'].squeeze(2)
-    labels = torch.clamp(labels['gly'], min=0, max=1).squeeze(2).float()
+    labels = labels['gly'].squeeze(2).float()
 
-    #print('gly_mse')
+    #print('gly_definite_bce')
     #print(outputs.shape)
     #print(labels.shape)
     #print(mask.shape, mask.sum())
-    loss = mse(outputs, labels, mask, positive_weight)
+    loss = bce_logits(outputs, labels, mask, positive_weight=positive_weight)
     #print(loss)
     return loss
 
 
-def gly_hard_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss
+def gly_ambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for ambiguous sites (>0 and <1)
     Args:
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'seen']).squeeze(2)
 
-    outputs = torch.round(outputs['gly']).squeeze(2)
+    outputs = outputs['gly'].squeeze(2)
     labels = labels['gly'].squeeze(2).float()
 
-    #print('gly_hard_mse')
+    #print('gly_ambiguous_mse')
     #print(outputs.shape)
     #print(labels.shape)
     #print(mask.shape, mask.sum())
