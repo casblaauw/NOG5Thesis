@@ -201,14 +201,14 @@ Config files are in `.yml` format:
 	  type: null
 
 	multitask_loss:
-	  #type: AutomaticWeightedLoss
+	#  type: AutomaticWeightedLoss
 	  type: WeightedLoss
 	  args:
-	    loss_names: [ss8_bce, dis_mse, rsa_mse, phi_mse, psi_mse, gly_unambiguous_mse, gly_mse]
-	    loss_weights: [1, 1, 1, 1, 1, 2000, 100]
-	    loss_args: [{}, {}, {}, {}, {}, {positive_weight: 0.05}, {positive_weight: 0.05}]
-
-	metrics: [ss8_pcc, ss3_pcc, dis_pcc, rsa_pcc, phi_mae, psi_mae, gly_pcc, gly_unambiguous_pcc, gly_mcc, gly_unambiguous_mcc, gly_fpr, gly_fnr]
+	    loss_names: [ss8_bce, dis_mse, rsa_mse, phi_mse, psi_mse, gly_definite_mse]
+	    loss_weights: [1, 1, 1, 1, 1, 2000]
+	    loss_args: [{}, {}, {}, {}, {}, {positive_weight: 0.01}]
+	
+	metrics: [ss8_pcc, ss3_pcc, dis_pcc, rsa_pcc, phi_mae, psi_mae, gly_pcc, gly_definite_mcc, gly_ambiguous_mcc, gly_fpr, gly_fnr]
 
 
 Add additional configurations if you need.
