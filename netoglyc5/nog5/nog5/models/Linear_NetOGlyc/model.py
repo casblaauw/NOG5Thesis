@@ -51,6 +51,9 @@ class Linear_ESM1b_NetOGlyc(Linear_NetOGlyc):
         """
         super().__init__(**kwargs)
 
+        if embedding_args is None:
+            embedding_args = {}
+
         # ESM1b block
         self.embedding = ESM1bEmbedding(embedding_pretrained, **embedding_args)
 
@@ -117,6 +120,9 @@ class Linear_ESM1b_NetOGlyc_NetSurfP(Linear_NetOGlyc_NetSurfP):
             kwargs: arguments for superclass
         """
         super().__init__(**kwargs)
+
+        if embedding_args is None:
+            embedding_args = {}
 
         # ESM1b block
         self.embedding = ESM1bEmbedding(embedding_pretrained, **embedding_args)

@@ -116,6 +116,9 @@ class CNNTrans_ESM1b_NetOGlyc(CNNTrans_NetOGlyc):
         """
         super().__init__(**kwargs)
 
+        if embedding_args is None:
+            embedding_args = {}
+
         self.embedding = ESM1bEmbedding(embedding_pretrained, **embedding_args)
 
     def forward(self, x: Tensor, seq_lengths: Tensor, get_hidden_output=False) -> Dict[str, Tensor]:
@@ -182,6 +185,9 @@ class CNNTrans_ESM1b_NetOGlyc_NetSurfP(CNNTrans_NetOGlyc_NetSurfP):
             kwargs: arguments for superclass
         """
         super().__init__(**kwargs)
+
+        if embedding_args is None:
+            embedding_args = {}
 
         # ESM1b block
         self.embedding = ESM1bEmbedding(embedding_pretrained, **embedding_args)

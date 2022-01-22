@@ -1,20 +1,19 @@
-name: CNNTrans_NetOGlyc_NetSurfP
+name: CNNbLSTM_ESM1b_NetOGlyc_NetSurfP
 save_dir: saved/nog5
 seed: 1234
 target_devices: [0]
 
 arch:
-  type: CNNTrans_NetOGlyc_NetSurfP
+  type: CNNbLSTM_ESM1b_NetOGlyc_NetSurfP
   args:
     init_n_channels: 1280
     out_channels: 32
     cnn_layers: 2
     kernel_size: [129, 257]
     padding: [64, 128]
-    n_head: 21
+    n_hidden: 1024
     dropout: 0.5
-    encoder_layers: 2
-#    embedding_pretrained: "models/esm1b_t33_650M_UR50S.pt"
+    lstm_layers: 2
 
 dataloaders:
   training:
@@ -50,23 +49,19 @@ dataloaders:
         label_names: [ss8, dis, rsa, phi, psi, gly]
         label_sizes: [8, 1, 1, 1, 1, 1]
   prediction:
-    paths: ["/home/jakob/Cloudvault_new/Data/NetOGlyc5 data/GalNAc data/05-embedding/protein_embeddings_netsurfp_output_glyc_labels_max.h5"]
     type: BasicDataLoader
     args:
       batch_size: 1
       num_workers: 2
-      shuffle: false
-      training_indices: [15, 25, 50, 66, 78, 87, 102, 119, 128, 132, 142, 162, 174, 190, 200, 214, 229, 247, 257, 280, 293, 308, 325, 337, 361, 381, 390, 405, 420, 473, 483, 502, 512, 525, 538, 549, 562, 576, 580, 588, 599, 620, 647, 650, 671, 696, 712, 720, 734, 807, 821, 838, 846, 869, 883, 921, 924, 935, 958, 1012, 1032, 1042, 1075, 1087, 1103, 1119, 1129, 1136, 1140, 1155, 1165, 1172, 1181, 1202, 1218, 1228, 1237, 1238, 1258, 1275, 1283, 1289, 1301, 1316, 1325, 1337, 1346, 1365, 1372, 1379, 1384, 1386, 1420, 1435, 1464, 1488, 1499, 1517, 1540, 1559, 1569, 1573, 1616, 1636, 1641, 1647, 1657, 1664, 1670, 1701, 1727, 1746, 1758, 1781, 1797, 1804, 1805, 1824, 1826, 1831, 1853, 1865, 1866, 1884, 1904, 1925, 1939, 1945, 1951, 1973, 1998, 2019, 2037, 2051, 2063, 2087, 2091, 2101, 2176, 2192, 2219, 2223, 2245, 2272, 2308, 2321, 2343, 2352, 2432, 2453, 2460, 2476, 2489, 2515, 2529, 2550, 2570, 2592, 2614, 2625, 2680, 2694, 2722, 2752, 2786, 2795, 2812, 2830, 2849, 2856, 2889, 2913, 2919, 2949, 2974, 3001, 3002, 3026, 3049, 3067, 3103, 3127, 3177, 3194, 3208, 3222, 3229, 3251, 3265, 3280, 3313, 3325, 3346, 3347, 3350, 3404, 3411, 3436, 3452, 3487, 3499, 3523, 3539, 3565, 3602, 3627, 3628, 3635, 3661, 3676, 3689, 3691, 3716, 3728, 3771, 3794, 3814, 3825, 3859, 3865, 3882, 3912, 3929, 3958, 3981, 4001, 4027, 4070, 4090, 4105, 4112, 4135, 4169, 4196, 4231, 4250, 4268, 4285, 4308, 4324, 4351, 4371, 4390, 4410, 4438, 4459, 4479, 4498, 4505, 4534, 4551, 4563, 4586, 4618, 4642, 4655, 4678, 4705, 4730, 4763, 4795, 4813, 4839, 4861, 4902, 4927, 4965 ]
+      shuffle: False
     dataset:
-      type: H5PredictionDataset
-      args:
-        embedding_features: 1280
+      type: FastaPredictionDataset
 
 prediction:
   allow_cuda: True
   log_step: 50
-#  data_transform:
-#    type: ESM1bTokenize
+  data_transform:
+    type: ESM1bTokenize
   saver:
     type: H5Saver
     args:
@@ -88,7 +83,7 @@ training:
 optimizer:
   type: AdamW
   args:
-    lr: 1.0e-04
+    lr: 5.0e-05
 #    lr: 3.0e-4
 #    weight_decay: 1.0e-1
 #    momentum: 0.9
