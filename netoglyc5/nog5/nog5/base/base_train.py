@@ -75,6 +75,7 @@ class TrainerBase:
             # print logged informations to the screen
             for key, value in results.items():
                 log.info(f'{str(key):15s}: {value}')
+                print(f'{str(key):15s}: {value}')
 
             # evaluate model performance according to configured metric,
             # save best checkpoint as model_best
@@ -100,9 +101,10 @@ class TrainerBase:
                 else:
                     not_improved_count += 1
 
-                if not_improved_count == self.early_stop:
-                    log.info(f"Validation performance didn\'t improve for {self.early_stop} "
-                             "epochs. Training stops.")
+                if not_improved_count == self.early_stop and epoch > self.grace_period:
+                    early_stop_msg = f"Validation performance didn\'t improve for {self.early_stop} epochs and grace period ({self.grace_period}) is over. Training stops."
+                    log.info(early_stop_msg)
+                    print(early_stop_msg)
                     break
 
             if epoch % self.save_period == 0:
@@ -160,6 +162,7 @@ class TrainerBase:
             assert self.mnt_mode in ['min', 'max']
             self.mnt_best = math.inf if self.mnt_mode == 'min' else -math.inf
             self.early_stop = config.get('early_stop', math.inf)
+            self.grace_period = config.get('grace_period', 1)
 
 
 class AverageMeter:

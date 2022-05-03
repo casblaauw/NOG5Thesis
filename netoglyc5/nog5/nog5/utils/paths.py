@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Tuple
 import datetime
 
 LOG_DIR = "logs"
@@ -24,7 +25,7 @@ def log_path(config: dict) -> Path:
     return ensure_exists(p)
 
 
-def trainer_paths(config: dict) -> tuple[Path, Path]:
+def trainer_paths(config: dict) -> Tuple[Path, Path]:
     """ Returns the paths to save checkpoints and tensorboard runs. eg. """
     start_time = datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
     arch_datetime = arch_path(config) / start_time

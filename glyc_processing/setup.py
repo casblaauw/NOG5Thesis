@@ -36,10 +36,12 @@ setup(
     include_package_data=True,
     python_requires=">=3.6",
     # Max versions can be changed/removed, they are only there to prevent problems when automatically installing
-    install_requires=["biopython>=1.79,<2",
-                      "numpy>=1.19.5,<2",
-                      "pandas>=1.1.5,<2",
-                      "requests>=2.26.0,<3",
-                      "tqdm>=4.62.3,<5",
-                      "ipython>=7.27.0,<8"]
+    install_requires=[
+      "biopython>=1.79,<2",
+      "numpy>=1.19.5,<2",
+      "pandas>=1.1.5,<2",
+      #"requests>=2.26.0,<3",
+      "tqdm>=4.62.3,<5",
+      #"ipython>=7.27.0,<8"
+      ]
 )

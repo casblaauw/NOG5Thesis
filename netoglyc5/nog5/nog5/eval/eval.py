@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional
+import gc
 
 import torch
 from torch import Tensor
@@ -56,6 +57,7 @@ class Evaluator(EvaluatorBase):
         del target
         del output
         torch.cuda.empty_cache()
+        gc.collect()
 
         # return results
         results = {}

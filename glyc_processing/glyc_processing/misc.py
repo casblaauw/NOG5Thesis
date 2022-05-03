@@ -1,8 +1,7 @@
 import builtins
 import gzip
 import math
-from os import PathLike
-from typing import Callable, Union, Optional, TypeVar, IO, Tuple
+from typing import Callable, Union, Optional, TypeVar, Tuple
 
 import requests
 from IPython.display import display, Markdown
@@ -42,11 +41,11 @@ def download(url: str, query_params: dict = None, post_data: dict = None, stream
             return r.text
 
 
-def get_uncompressed_size(file: Union[PathLike[str], IO[bytes]]):
+def get_uncompressed_size(file):
     """
     Method to estimate uncompressed size of gzipped files.
     Warning: size is mod 2^32 so doesn't work for files >4GB
-    :param file: file path or handle for gzip file
+    :param file: file path or handle for gzip file (Union[PathLike[str] or IO[bytes]])
     :return: uncompressed size in bytes
     """
     with gzip.open(file, 'rb') as f:

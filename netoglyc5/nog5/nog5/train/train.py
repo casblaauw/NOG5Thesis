@@ -1,5 +1,6 @@
 import torch
 import optuna
+import gc
 from torch import Tensor
 
 from nog5.base import TrainerBase, AverageMeter
@@ -75,6 +76,7 @@ class Trainer(TrainerBase):
         del target
         del output
         torch.cuda.empty_cache()
+        gc.collect()
 
         # write results
         self.writer.add_scalar('epoch/loss', loss_mtr.avg)
@@ -165,6 +167,7 @@ class Trainer(TrainerBase):
         del target
         del output
         torch.cuda.empty_cache()
+        gc.collect()
 
         # write results
         self.writer.set_step(epoch, 'valid')

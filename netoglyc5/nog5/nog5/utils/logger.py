@@ -79,6 +79,6 @@ def setup_logging(run_config: dict, verbose: int = 0, log_config_path: str = Non
 
 
 def setup_logger(name):
-    log = logging.getLogger(f'nsp3.{name}')
+    log = logging.getLogger(f'nog5.{name}')
     log.setLevel(logging.DEBUG)
     return log
