@@ -1,16 +1,17 @@
 from typing import List
 
 import torch
+# from torch import nn
 import torch.optim as module_optimizer
 import torch.optim.lr_scheduler as module_scheduler
 import optuna
 import matplotlib.pyplot as plt
-from nsp3.main import setup_param_groups
 from torch.utils.data import ConcatDataset
 
 import nog5.dataloaders.augmentation as module_loadaug
-import nog5.datasets.traineval as module_traineval
-import nog5.datasets.prediction as module_pred
+# import nog5.datasets.traineval as module_traineval
+# import nog5.datasets.prediction as module_pred
+import nog5.dataloaders.datasets as module_datasets
 import nog5.dataloaders as module_load
 import nog5.output.loss.multitask_losses as module_multiloss
 import nog5.output.metrics as module_metric
@@ -61,18 +62,18 @@ def train(cfg: dict, resume: str = None):
     lr_scheduler = get_instance(module_scheduler, 'lr_scheduler', cfg, optimizer=optimizer)
 
     log.info("Loading training dataset(s)")
-    training_dataloader = _get_dataloader(module_traineval, 'training', cfg)
+    training_dataloader = _get_dataloader(module_datasets, 'training', cfg)
 
     if 'validation' in cfg['dataloaders']:
         log.info("Loading validation dataset(s)")
-        validation_dataloader = _get_dataloader(module_traineval, 'validation', cfg)
+        validation_dataloader = _get_dataloader(module_datasets, 'validation', cfg)
     else:
         log.info(f"Split training dataset for training and validation")
         validation_dataloader = training_dataloader.get_validation_dataloader()
 
     if 'testing' in cfg['dataloaders']:
         log.info("Loading testing dataset(s)")
-        testing_dataloaders = _get_dataloaders(module_traineval, 'testing', cfg)
+        testing_dataloaders = _get_dataloaders(module_datasets, 'testing', cfg)
     else:
         log.warning("No testing datasets were included, skipping testing")
         testing_dataloaders = []
@@ -150,7 +151,7 @@ def evaluate(cfg: dict, model_data: str):
     load_model_data_loosely(model, model_data, device)
 
     log.info("Loading testing dataset(s)")
-    testing_dataloaders = _get_dataloaders(module_traineval, 'testing', cfg)
+    testing_dataloaders = _get_dataloaders(module_datasets, 'testing', cfg)
 
     if 'testing' in cfg:
         testing_data_transform = get_transform('data_transform', cfg['testing'])
@@ -353,23 +354,30 @@ def hyperparameter_optim(cfg: dict, resume: str, results_path: str):
 
 
 def _get_dataloader(module_data, dataloader_name: str, cfg: dict):
-    dataset_paths = cfg['dataloaders'][dataloader_name]['paths']
-    if len(dataset_paths) > 1:
+    embedding_path = cfg['dataloaders'][dataloader_name]['embedding_path']
+    annotation_path = cfg['dataloaders'][dataloader_name]['annotation_path']
+
+    if len(embedding_path) > 1 and not isinstance(embedding_path, str):
         datasets = []
-        for path in dataset_paths:
-            datasets.append(get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=path))
+        for epath, apath in zip(embedding_path, annotation_path):
+            datasets.append(get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path = epath, info = apath))
         dataset = ConcatDataset(datasets)
+    elif len(embedding_path) == 1 and not isinstance(embedding_path, str):
+        dataset = get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=embedding_path[0], info=annotation_path[0])
     else:
-        dataset = get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=dataset_paths[0])
+        dataset = get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=embedding_path, info=annotation_path)
+        
     return get_instance(module_load, dataloader_name, cfg['dataloaders'], dataset=dataset)
 
 
 def _get_dataloaders(module_data, dataloader_name: str, cfg: dict):
-    dataset_paths = cfg['dataloaders'][dataloader_name]['paths']
+    embedding_path = cfg['dataloaders'][dataloader_name]['embedding_path']
+    annotation_path = cfg['dataloaders'][dataloader_name]['annotation_path']
+
     dataloaders = []
-    for path in dataset_paths:
-        dataset = get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=path)
-        dataloaders.append((path, get_instance(module_load, dataloader_name, cfg['dataloaders'], dataset=dataset)))
+    for epath, apath in zip(embedding_path, annotation_path):
+        dataset = get_instance(module_data, 'dataset', cfg['dataloaders'][dataloader_name], dataset_path=epath, info=apath)
+        dataloaders.append((epath, get_instance(module_load, dataloader_name, cfg['dataloaders'], dataset=dataset)))
     return dataloaders
 
 
@@ -377,3 +385,13 @@ def get_transform(transform_name: str, cfg_section: dict):
     if transform_name in cfg_section:
         return get_instance(module_loadaug, transform_name, cfg_section)
     return None
+
+# def setup_param_groups(model: nn.Module, config: dict) -> list:
+#     """ Setup model parameters
+#     Args:
+#         model: pytorch model
+#         config: configuration containing params
+#     Returns:
+#         list with model parameters
+#     """
+#     return [{'params': model.parameters(), **config}]

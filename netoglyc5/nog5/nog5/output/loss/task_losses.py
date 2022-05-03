@@ -239,10 +239,11 @@ def gly_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weig
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']).squeeze(2)
+    # All 3 had squeeze(2), but current dataloader structure only has (batch, seq_len) anyway so it breaks?
+    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask'])
 
-    outputs = outputs['gly'].squeeze(2)
-    labels = labels['gly'].squeeze(2).float()
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
 
     #print('gly_mse')
     #print(outputs.shape)
@@ -259,10 +260,10 @@ def gly_definite_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], posi
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
 
-    outputs = outputs['gly'].squeeze(2)
-    labels = labels['gly'].squeeze(2).float()
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
 
     #print('gly_definite_mse')
     #print(outputs.shape)
@@ -279,10 +280,10 @@ def gly_definite_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], posi
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask']).squeeze(2)
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
 
-    outputs = outputs['gly'].squeeze(2)
-    labels = labels['gly'].squeeze(2).float()
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
 
     #print('gly_definite_bce')
     #print(outputs.shape)
@@ -299,10 +300,10 @@ def gly_ambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], pos
         outputs: tensor with glycosylation predictions
         labels: tensor with labels
     """
-    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'seen']).squeeze(2)
+    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'seen'])
 
-    outputs = outputs['gly'].squeeze(2)
-    labels = labels['gly'].squeeze(2).float()
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
 
     #print('gly_ambiguous_mse')
     #print(outputs.shape)

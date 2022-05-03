@@ -1,6 +1,8 @@
 import torch
-from torch import Tensor
+import numpy as np
 
+from math import sqrt
+from torch import Tensor
 
 def fpr(pred: Tensor, labels: Tensor) -> float:
     """ Returns false positive rate
@@ -8,10 +10,20 @@ def fpr(pred: Tensor, labels: Tensor) -> float:
         pred: tensor with binary values
         labels: tensor with binary values
     """
-    fp = sum((pred == 1) & (labels == 0))
-    tn = sum((pred == 0) & (labels == 0))
+    if any(x not in (0,1) for x in pred):
+        raise ValueError('Predictions must be rounded to 0 or 1 to calculate FPR.')
+    if any(x not in (0,1) for x in labels):
+        raise ValueError('Labels must be rounded to 0 or 1 to calculate FPR.')
 
-    return (fp / (fp + tn)).item()
+    fp = int(torch.sum(torch.logical_and(torch.eq(pred, 1), torch.eq(labels, 0))))
+    tn = int(torch.sum(torch.logical_and(torch.eq(pred, 0), torch.eq(labels, 0))))
+
+    # All true positives means no FPR
+    if (fp+tn) is 0:
+        fpr = float(0)
+    else:
+        fpr = float(fp / (fp + tn))
+    return fpr
 
 
 def fnr(pred: Tensor, labels: Tensor) -> float:
@@ -20,29 +32,40 @@ def fnr(pred: Tensor, labels: Tensor) -> float:
         pred: tensor with binary values
         labels: tensor with binary values
     """
-    fn = sum((pred == 0) & (labels == 1))
-    tp = sum((pred == 1) & (labels == 1))
+    if any(x not in (0,1) for x in pred):
+        raise ValueError('Predictions must be rounded to 0 or 1 to calculate FNR.')
+    if any(x not in (0,1) for x in labels):
+        raise ValueError('Labels must be rounded to 0 or 1 to calculate FNR.')
+    
+    fn = int(torch.sum(torch.logical_and(torch.eq(pred, 0), torch.eq(labels, 1))))
+    tp = int(torch.sum(torch.logical_and(torch.eq(pred, 1), torch.eq(labels, 1))))
 
-    return (fn / (fn + tp)).item()
+    # All true negatives means no FNR
+    if (fn+tp) is 0:
+        fnr = float(0)
+    else:
+        fnr = float(fn / (fn + tp))
+    return fnr
 
 
 def mcc(pred: Tensor, labels: Tensor) -> float:
-    """ Returns mathews correlation coefficient
+    """ Returns Matthews correlation coefficient
     Args:
         pred: tensor with binary values
         labels: tensor with binary values
     """
-    fp = sum((pred == 1) & (labels == 0))
-    tp = sum((pred == 1) & (labels == 1))
-    fn = sum((pred == 0) & (labels == 1))
-    tn = sum((pred == 0) & (labels == 0))
+    fp = int(torch.sum(torch.logical_and(torch.eq(pred, 1), torch.eq(labels, 0))))
+    tp = int(torch.sum(torch.logical_and(torch.eq(pred, 1), torch.eq(labels, 1))))
+    fn = int(torch.sum(torch.logical_and(torch.eq(pred, 0), torch.eq(labels, 1))))
+    tn = int(torch.sum(torch.logical_and(torch.eq(pred, 0), torch.eq(labels, 0))))
+    
 
-    mcc = (tp * tn - fp * fn) / torch.sqrt(((tp + fp) * (fn + tn) * (tp + fn) * (fp + tn)).float())
+    denom = sqrt(((tp + fp) * (fn + tn) * (tp + fn) * (fp + tn)))
+    if denom == 0:
+        denom = 1
 
-    if torch.isnan(mcc):
-        return 0
-
-    return mcc.item()
+    mcc = (tp * tn - fp * fn) / denom
+    return mcc
 
 
 def pcc(pred: Tensor, labels: Tensor) -> float:
@@ -55,17 +78,6 @@ def pcc(pred: Tensor, labels: Tensor) -> float:
     y = labels - torch.mean(labels)
 
     return (torch.sum(x * y) / (torch.sqrt(torch.sum(x ** 2)) * torch.sqrt(torch.sum(y ** 2)))).item()
-
-
-def mae_angle(pred: Tensor, labels: Tensor) -> float:
-    """ Returns mean absolute error for degree angles
-    Args:
-        pred: tensor with predicted values
-        labels: tensor with correct values
-    """
-    err = torch.abs(labels - pred)
-    return torch.mean(torch.fmin(err, 360 - err)).item()
-
 
 def accuracy(pred: Tensor, labels: Tensor) -> float:
     """ Returns accuracy
@@ -85,3 +97,13 @@ def rmse(pred: Tensor, labels: Tensor) -> float:
     """
 
     return torch.sqrt(torch.mean((labels - pred) ** 2)).item()
+
+
+def mae_angle(pred: Tensor, labels: Tensor) -> float:
+    """ Returns mean absolute error for degree angles
+    Args:
+        pred: tensor with predicted values
+        labels: tensor with correct values
+    """
+    err = torch.abs(labels - pred)
+    return torch.mean(torch.fmin(err, 360 - err)).item()
