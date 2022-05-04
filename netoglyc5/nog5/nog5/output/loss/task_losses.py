@@ -6,6 +6,93 @@ from torch import Tensor
 from nog5.output.loss.loss_functions import mse, ce, bce, nll, bce_logits
 from nog5.output.misc import get_mask, dihedral_to_radians
 
+# Glycosylation site loss functions ----------------------
+
+def gly_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    # All 3 had squeeze(2), but current dataloader structure only has (batch, seq_len) anyway so it breaks?
+    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = mse(outputs, labels, mask, positive_weight)
+
+    return loss
+
+
+def gly_definite_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = mse(outputs, labels, mask, positive_weight)
+    return loss
+
+
+def gly_definite_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = bce_logits(outputs, labels, mask, positive_weight=positive_weight)
+
+    return loss
+
+
+def gly_ambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for ambiguous sites (>0 and <1)
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'seen'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = mse(outputs, labels, mask, positive_weight)
+
+    return loss
+
+
+def com_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
+    """ Returns glycosylation site composition multi-label probability loss
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    mask = get_mask(labels, ['composition_mask', 'unknown_mask'])
+
+    outputs = outputs['com']
+    labels = labels['com'].float()
+
+    #print('com_bce')
+    #print(outputs.shape)
+    #print(labels.shape)
+    #print(mask.shape, mask.sum())
+    loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
+    #print(loss)
+    return loss
+
+
+# Structure/surface accessibility loss functions -------------------
 
 def ss8_ce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
     """ Returns SS8 loss
@@ -18,12 +105,8 @@ def ss8_ce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights:
     outputs = outputs['ss8'].permute(0, 2, 1)
     labels = labels['ss8'].squeeze(2).long()
 
-    #print('ss8_ce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = ce(outputs, labels, mask, class_weights=class_weights)
-    #print(loss)
+
     return loss
 
 
@@ -38,12 +121,8 @@ def ss8_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights
     outputs = outputs['ss8']
     labels = labels['ss8']
 
-    #print('ss8_bce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
-    #print(loss)
+
     return loss
 
 
@@ -70,12 +149,8 @@ def ss3_ce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights:
     labels = labels['ss8'].squeeze(2)
     labels = ss3_mask[labels]
 
-    #print('ss3_ce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = nll(outputs, labels, mask, class_weights=class_weights)
-    #print(loss)
+
     return loss
 
 
@@ -120,12 +195,8 @@ def dis_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weig
     outputs = outputs['dis'].squeeze(2)
     labels = labels['dis'].squeeze(2).float()
     
-    #print('dis_bce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = bce_logits(outputs, labels, mask, positive_weight=positive_weight)
-    #print(loss)
+
     return loss
 
 
@@ -140,12 +211,8 @@ def dis_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> Tensor:
     outputs = torch.sigmoid(outputs['dis']).squeeze(2)
     labels = labels['dis'].squeeze(2).float()
 
-    #print('dis_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = mse(outputs, labels, mask)
-    #print(loss)
+
     return loss
 
 
@@ -160,12 +227,8 @@ def rsa_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weig
     outputs = outputs['rsa'].squeeze(2)
     labels = labels['rsa'].squeeze(2).float()
 
-    #print('rsa_bce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = bce_logits(outputs, labels, mask, positive_weight=positive_weight)
-    #print(loss)
+
     return loss
 
 
@@ -180,12 +243,8 @@ def rsa_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> Tensor:
     outputs = torch.sigmoid(outputs['rsa']).squeeze(2)
     labels = labels['rsa'].squeeze(2).float()
 
-    #print('rsa_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = mse(outputs, labels, mask)
-    #print(loss)
+
     return loss
 
 
@@ -202,12 +261,8 @@ def phi_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> Tensor:
     labels = labels['phi']
     labels = torch.cat((torch.sin(dihedral_to_radians(labels)), torch.cos(dihedral_to_radians(labels))), dim=2)
 
-    #print('phi_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = mse(outputs, labels, mask)
-    #print(loss)
+
     return loss
 
 
@@ -224,111 +279,7 @@ def psi_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> Tensor:
     labels = labels['psi']
     labels = torch.cat((torch.sin(dihedral_to_radians(labels)), torch.cos(dihedral_to_radians(labels))), dim=2)
 
-    #print('psi_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
     loss = mse(outputs, labels, mask)
-    #print(loss)
+
     return loss
 
-
-def gly_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss
-    Args:
-        outputs: tensor with glycosylation predictions
-        labels: tensor with labels
-    """
-    # All 3 had squeeze(2), but current dataloader structure only has (batch, seq_len) anyway so it breaks?
-    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask'])
-
-    outputs = outputs['gly']
-    labels = labels['gly'].float()
-
-    #print('gly_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
-    loss = mse(outputs, labels, mask, positive_weight)
-    #print(loss)
-    return loss
-
-
-def gly_definite_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
-    Args:
-        outputs: tensor with glycosylation predictions
-        labels: tensor with labels
-    """
-    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
-
-    outputs = outputs['gly']
-    labels = labels['gly'].float()
-
-    #print('gly_definite_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
-    loss = mse(outputs, labels, mask, positive_weight)
-    #print(loss)
-    return loss
-
-
-def gly_definite_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
-    Args:
-        outputs: tensor with glycosylation predictions
-        labels: tensor with labels
-    """
-    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
-
-    outputs = outputs['gly']
-    labels = labels['gly'].float()
-
-    #print('gly_definite_bce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
-    loss = bce_logits(outputs, labels, mask, positive_weight=positive_weight)
-    #print(loss)
-    return loss
-
-
-def gly_ambiguous_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
-    """ Returns glycosylation probability loss solely for ambiguous sites (>0 and <1)
-    Args:
-        outputs: tensor with glycosylation predictions
-        labels: tensor with labels
-    """
-    mask = get_mask(labels, ['ambiguous_glycosylation_mask', 'seen'])
-
-    outputs = outputs['gly']
-    labels = labels['gly'].float()
-
-    #print('gly_ambiguous_mse')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
-    loss = mse(outputs, labels, mask, positive_weight)
-    #print(loss)
-    return loss
-
-
-def com_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
-    """ Returns glycosylation site composition multi-label probability loss
-    Args:
-        outputs: tensor with glycosylation predictions
-        labels: tensor with labels
-    """
-    mask = get_mask(labels, ['composition_mask', 'unknown_mask'])
-
-    outputs = outputs['com']
-    labels = labels['com'].float()
-
-    #print('com_bce')
-    #print(outputs.shape)
-    #print(labels.shape)
-    #print(mask.shape, mask.sum())
-    loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
-    #print(loss)
-    return loss
