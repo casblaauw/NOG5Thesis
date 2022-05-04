@@ -84,13 +84,13 @@ class CNNLocalGlobal_small(ModelBase):
             nn.Sigmoid()
         )
 
-    def forward(self, x, seq_lengths, get_hidden_output=False) -> Dict[str, Tensor]:
+    def forward(self, x, mask, get_hidden_output=False) -> Dict[str, Tensor]:
         """ Forwarding logic """
 
-        # Starting shape: (batch, max_len, embed_dim)
 
-        # Housekeeping: get max sequence length and reorder dimensions
-        max_seq_length = int(max(seq_lengths))
+        # Housekeeping: get max seq length (batch shape)
+        # Starting shape: (batch, max_len, embed_dim)
+        max_seq_length = x.shape[1]
 
         ## Permute `x_embed` to match input shape requirement of `nn.Conv1d`.
         ## Output shape: (batch, embed_dim, max_len) 
