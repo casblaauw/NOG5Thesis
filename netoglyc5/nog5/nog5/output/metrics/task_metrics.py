@@ -7,6 +7,8 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 from nog5.output.misc import get_mask, arctan_dihedral
 
+# Glycosylation site metrics ===================
+
 def gly_pcc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     """ Returns glycosylation metric
     Args:
@@ -202,8 +204,52 @@ def com_accuracy(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float
     #print(metric)
     return metric
 
+# Glycosylation region metrics ===================
+def region_fpr(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
+    """ Returns false positive rate for glycosylation regions
+    Args:
+        outputs: tensor with predicted values
+        labels: tensor with correct values
+        threshold: float used for cutoff when rounding to 0/1
+    """
+    mask = get_mask(labels, ['unknown_mask'])
+    outputs = torch.where(outputs['region'] >= threshold, 1, 0)[mask == 1]
+    labels = torch.where(labels['region'] >= threshold, 1, 0)[mask == 1]
 
-# Secondary structure metrics for NetSurfP integration
+    metric = fpr(outputs, labels)
+    return metric
+
+
+def region_fnr(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
+    """ Returns false negative rate for glycosylation regions
+    Args:
+        outputs: tensor with predicted values
+        labels: tensor with correct values
+        threshold: float used for cutoff when rounding to 0/1
+    """
+    mask = get_mask(labels, ['unknown_mask'])
+    outputs = torch.where(outputs['region'] >= threshold, 1, 0)[mask == 1]
+    labels = labels['region'][mask == 1]
+
+    metric = fnr(outputs, labels)
+    return metric
+
+def region_acc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
+    """ Returns false negative rate for glycosylation regions
+    Args:
+        outputs: tensor with predicted values
+        labels: tensor with correct values
+        threshold: float used for cutoff when rounding to 0/1
+    """
+    mask = get_mask(labels, ['unknown_mask'])
+    outputs = outputs['region'][mask == 1]
+    labels = labels['region'][mask == 1]
+
+    metric = accuracy(outputs, labels)
+    return metric
+
+
+# Secondary structure metrics for NetSurfP integration ===================
 
 def ss8_accuracy(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     """ Returns SS8 metric

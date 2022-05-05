@@ -91,6 +91,40 @@ def com_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights
     #print(loss)
     return loss
 
+# Glycosylation region loss functions: 
+## Covered by viterbi during training
+
+def region_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
+    """ Returns glycosylation region binary cross-entropy loss
+    Args:
+        outputs: tensor with binary glycosylation predictions (one-hot-encoded, so one dim per label type)
+        labels: tensor with labels
+    """
+    
+    mask = get_mask(labels, ['unknown_mask'])
+
+    outputs = outputs['region'].float()
+    labels = labels['region'].float()
+
+    loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
+
+    return loss
+
+def gly_mse(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], positive_weight: float = None) -> Tensor:
+    """ Returns glycosylation probability loss
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    # All 3 had squeeze(2), but current dataloader structure only has (batch, seq_len) anyway so it breaks?
+    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = mse(outputs, labels, mask, positive_weight)
+
+    return loss
 
 # Structure/surface accessibility loss functions -------------------
 

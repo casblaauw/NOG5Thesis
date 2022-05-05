@@ -42,11 +42,13 @@ class ZipDataset(DatasetBase):
         # Get labels
         label = {}
         label['gly'] = torch.tensor(self.info[protname].get_glycosylation_labels())
+        label['region'] = torch.tensor(self.info[protname].get_glycosylation_regions())
         label['seq_mask'] = torch.ones_like(label['gly'])
         ## Mask in the loss context indicates detected glycosylation sites
         label['glycosylation_mask'] = torch.where(label['gly'] >= 0, 1, 0) 
         label['definite_glycosylation_mask'] = torch.where(torch.eq(label['gly'], 0) | torch.eq(label['gly'], 1), 1, 0) 
         label['ambiguous_glycosylation_mask'] = torch.where(torch.gt(label['gly'], 0) & torch.lt(label['gly'], 1), 1, 0)
+        
 
         ## Mask in the training/model context used to indicate sequence length integer (to counteract batch padding)
         # mask = torch.tensor(len(self.info[protname].protein_seq))
@@ -76,7 +78,7 @@ class ZipDataset(DatasetBase):
 
         inputs = pad_sequence(inputs, batch_first=True) 
         labels = {label_type: pad_sequence(label_values, batch_first=True) for label_type, label_values in labels_dict.items()}
-        masks = torch.stack(masks)
+        masks = pad_sequence(masks, batch_first = True)
         return (inputs, labels, masks)
 
 

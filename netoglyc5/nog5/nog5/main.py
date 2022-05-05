@@ -47,6 +47,7 @@ def train(cfg: dict, resume: str = None):
     optimizer = get_instance(module_optimizer, 'optimizer', cfg, params=[{'params': model.trainable_parameters()}])
     loss = get_instance(module_multiloss, 'multitask_loss', cfg)
     metrics = [getattr(module_metric, met) for met in cfg['metrics']]
+    integrated = cfg['training'].get('integrated', False)
 
     param_groups = []
     if isinstance(loss, ParameterizedLossBase):
@@ -105,7 +106,8 @@ def train(cfg: dict, resume: str = None):
         data_transform=training_data_transform,
         mask_transform=training_mask_transform,
         target_transform=training_target_transform,
-        lr_scheduler=lr_scheduler
+        lr_scheduler=lr_scheduler,
+        integrated=integrated
     )
 
     trainer.train()

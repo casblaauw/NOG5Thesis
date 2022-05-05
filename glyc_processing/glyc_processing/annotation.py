@@ -185,6 +185,42 @@ class Protein:
                 labels[possible_site_idx] = self.protein_set.scoring_function(sites, seen_count)
         return labels
 
+    def get_glycosylation_regions(self, window_size: int = 15, label_fill: int = 0) -> List[int]:
+        """
+        Returns binary labeled sequence (0/1), annotating regions that have been seen to be glycosylated at some point
+        """
+        # If sites contain any site objects (which means definite or uncertain glycosylation was found), set window around site to 1
+        labels = [label_fill for _ in range(len(self.protein_seq))]
+        window_wing = window_size//2
+        for possible_site_idx, sites in enumerate(self.seq_sites):
+            if sites is not None and len(sites) > 0:
+                start_idx = max(possible_site_idx-window_wing, 0)
+                end_idx = min(possible_site_idx+window_wing+1, len(self.protein_seq))
+                labels[start_idx:end_idx] = [1]*(end_idx - start_idx)
+        return labels
+
+    def get_enhanced_glycosylation_regions(self, cutoff = 0.75, window_size: int = 15, label_fill: int = 0) -> List[int]:
+        """
+        Returns labeled sequence (0/1/2), annotating regions with some glycosylation (1) or core glycosylation (2)
+        """
+        labels = [label_fill for _ in range(len(self.protein_seq))]
+        window_wing = window_size//2
+        # If sites contain any site objects (which means definite or uncertain glycosylation was found), set window around site to 1
+        for possible_site_idx, sites in enumerate(self.seq_sites):
+            if sites is not None and len(sites) > 0:
+                start_idx = max(possible_site_idx-window_wing, 0)
+                end_idx = min(possible_site_idx+window_wing+1, len(self.protein_seq))
+                labels[start_idx:end_idx] = [1]*(end_idx - start_idx)
+        # If sites are always glycosylated, set window around site to 2
+        for possible_site_idx, (sites, seen_count) in enumerate(zip(self.seq_sites, self.seq_idx_seen_count)):
+            if sites is not None and len(sites) > 0 and seen_count > 0:
+                score = len(sites)/seen_count
+                if score >= cutoff:
+                    start_idx = max(possible_site_idx-window_wing, 0)
+                    end_idx = min(possible_site_idx+window_wing+1, len(self.protein_seq))
+                    labels[start_idx:end_idx] = [2]*(end_idx - start_idx)
+        return labels
+
     def get_all_site_windows(self, aa_before_site: int = 15, aa_after_site: int = 15, seq_padding: str = 'X',
                              labels_padding : float = -1.0, label_type: str = 'float', label_int_threshold: float = 0.5,
                              include_unseen_sites: bool = False, start: int = None, end: int = None

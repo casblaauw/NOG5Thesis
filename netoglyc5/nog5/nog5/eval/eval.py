@@ -46,7 +46,7 @@ class Evaluator(EvaluatorBase):
                 if self.target_transform:
                     target = self.target_transform(target)
 
-                data, target = tensors_to_device(data, self.device), tensors_to_device(target, self.device)
+                data, target, mask = tensors_to_device(data, self.device), tensors_to_device(target, self.device), tensors_to_device(mask, self.device)
 
                 output = self.model(data, mask)
                 for mtr, value in zip(metric_mtrs, self._eval_metrics(output, target)):

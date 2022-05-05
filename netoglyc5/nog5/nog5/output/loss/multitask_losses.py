@@ -69,3 +69,11 @@ class AutomaticWeightedLoss(ParameterizedLossBase):
             param_group['weight_decay'] = 0
         param_group.update({'params': self.trainable_parameters(), **self.param_group_args})
         return param_group
+
+class PlaceholderLoss:
+    """ Returns inputed value, for models like CRFs that compute loss inherently"""
+    def __init__(self, **kwargs):
+        pass
+
+    def __call__(self, loss: Tensor, *args, **kwargs) -> Tensor:
+        return loss

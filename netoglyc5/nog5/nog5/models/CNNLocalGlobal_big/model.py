@@ -102,13 +102,13 @@ class CNNLocalGlobal_big(ModelBase):
         )
         
 
-    def forward(self, x, seq_lengths, get_hidden_output=False) -> Dict[str, Tensor]:
+    def forward(self, x, mask, get_hidden_output=False) -> Dict[str, Tensor]:
         """ Forwarding logic """
 
-        # Housekeeping: get max sequence length
-        max_seq_length = int(max(seq_lengths))
-
+        # Housekeeping: get individual seq lengths and max seq length (batch shape)
         # Starting shape: (batch, max_len, embed_dim)
+        seq_lengths = torch.sum(mask, dim=1).cpu()
+        max_seq_length = x.shape[1]
 
         # Get regional glycosylatability score
         # Expects (batch, max_len, embed_dim), makes (batch, max_len, region_hidden_features) -> (batch, max_len, 1) -> (batch, 1, max_len)

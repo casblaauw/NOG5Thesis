@@ -6,3 +6,4 @@ from .CNNTrans import *
 from .CNNTrans_NetOGlyc import *
 from .ESM1b_Linear import *
 from .Linear_NetOGlyc import *
+from .LSTMCRF import *

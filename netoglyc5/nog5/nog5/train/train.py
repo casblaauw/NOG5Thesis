@@ -15,7 +15,7 @@ class Trainer(TrainerBase):
 
     def __init__(self, model, loss, metrics, optimizer, start_epoch, config, device, training_dataloader,
                  validation_dataloader=None, data_transform: callable = None, mask_transform: callable = None,
-                 target_transform: callable = None, lr_scheduler=None, trial=None):
+                 target_transform: callable = None, lr_scheduler=None, trial=None, integrated=False):
         super().__init__(model, loss, metrics, optimizer, start_epoch, config, device)
         self.training_dataloader = training_dataloader
         self.validation_dataloader = validation_dataloader
@@ -25,6 +25,7 @@ class Trainer(TrainerBase):
         self.mask_transform = mask_transform
         self.target_transform = target_transform
         self.trial = trial
+        self.integrated = integrated
 
     def _train_epoch(self, epoch: int) -> dict:
         """ Training logic for an epoch
@@ -49,8 +50,13 @@ class Trainer(TrainerBase):
             data, target = tensors_to_device(data, self.device), tensors_to_device(target, self.device)
 
             # Compute prediction and loss
-            output = self.model(data, mask)
-            loss = self.loss(output, target)
+            if self.integrated:
+                mask = tensors_to_device(mask, self.device)
+                # region_mask = mask['region'].copy().to(self.device)
+                loss = self.model(data, mask, target)
+            else:
+                output = self.model(data, mask)
+                loss = self.loss(output, target)
 
             # Backpropagation
             self.optimizer.zero_grad()
@@ -63,9 +69,11 @@ class Trainer(TrainerBase):
             if batch_idx % self.log_step == 0 or batch_idx == n_batches - 1:
                 self.writer.set_step(epoch * n_batches + batch_idx)
                 self.writer.add_scalar('batch/loss', loss.item())
-                for mtr, value in zip(metric_mtrs, self._eval_metrics(output, target)):
-                    mtr.update(value, data.size(0))
-                    self.writer.add_scalar(f'batch/{mtr.name}', value)
+                # Integrated models have no outputs during training, so only report loss for training set
+                if not self.integrated:
+                    for mtr, value in zip(metric_mtrs, self._eval_metrics(output, target)):
+                        mtr.update(value, data.size(0))
+                        self.writer.add_scalar(f'batch/{mtr.name}', value)
                 self._log_batch(
                     epoch, batch_idx, self.training_dataloader.batch_size,
                     n_batches, loss.item()
@@ -74,7 +82,8 @@ class Trainer(TrainerBase):
         # cleanup
         del data
         del target
-        del output
+        if not self.integrated:
+            del output
         torch.cuda.empty_cache()
         gc.collect()
 
@@ -152,7 +161,7 @@ class Trainer(TrainerBase):
                 if self.target_transform:
                     target = self.target_transform(target)
 
-                data, target = tensors_to_device(data, self.device), tensors_to_device(target, self.device)
+                data, target, mask = tensors_to_device(data, self.device), tensors_to_device(target, self.device), tensors_to_device(mask, self.device)
 
                 output = self.model(data, mask)
                 loss = self.loss(output, target)
