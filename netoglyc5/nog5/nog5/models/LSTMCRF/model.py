@@ -4,7 +4,8 @@ from typing import Dict, Any
 
 import torch
 import torch.nn as nn
-from torch import Tensor, softmax
+import torch.nn.functional as F
+from torch import Tensor
 from torchcrf import CRF
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
@@ -64,11 +65,15 @@ class LSTMCRF(ModelBase):
             x = self.crf.forward(emissions = x, tags = target['region'], mask = mask_bool)
             return -x # Return negative log likelihood (to minimise)
         else:
+            results = {}
+            results['region_lstm'] = x
+            results['region_lstm_softmax'] = F.softmax(x, dim = 2)
             # Expects (batch_size, seq_length, num_tags), returns (batch_size, seq_length)
             x = self.crf.decode(emissions = x, mask = mask_bool)
             x = [torch.tensor(elem, device = start_device) for elem in x]
             x = pad_sequence(x, batch_first = True, padding_value = 0)
-            return {'region': x}
+            results['region'] = x
+            return results
 
 
 
