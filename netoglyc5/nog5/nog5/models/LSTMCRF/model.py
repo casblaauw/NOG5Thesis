@@ -6,12 +6,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from torchcrf import CRF
+# from torchcrf import CRF
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
 from nog5.base import ModelBase
-
+from nog5.utils.crf import CRF
 from nog5.embeddings import ESM1bEmbedding
 
 
@@ -68,11 +68,15 @@ class LSTMCRF(ModelBase):
             results = {}
             results['region_lstm'] = x
             results['region_lstm_softmax'] = F.softmax(x, dim = 2)
+            # Decode (i.e. get predicted sequence labels)
             # Expects (batch_size, seq_length, num_tags), returns (batch_size, seq_length)
-            x = self.crf.decode(emissions = x, mask = mask_bool)
-            x = [torch.tensor(elem, device = start_device) for elem in x]
-            x = pad_sequence(x, batch_first = True, padding_value = 0)
-            results['region'] = x
+            preds = self.crf.decode(emissions = x, mask = mask_bool)
+            preds = [torch.tensor(elem, device = start_device) for elem in preds]
+            preds = pad_sequence(preds, batch_first = True, padding_value = 0)
+            results['region'] = preds
+            # Get marginal probabilities (i.e. get probabilities of each label)
+            probs = self.crf.compute_marginal_probabilities(emissions = x, mask = mask_bool)
+            results['region_probs'] = probs.to(start_device)
             return results
 
 
