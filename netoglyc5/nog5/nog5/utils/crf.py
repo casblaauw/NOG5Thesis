@@ -375,10 +375,25 @@ class CRF(nn.Module):
     def compute_marginal_probabilities(self,
                                        emissions: torch.FloatTensor,
                                        mask: torch.ByteTensor) -> torch.FloatTensor:
+        """Calculates marginal probabilities of predicted labels.
+        Shapes if self.batch_first is False:
+            emissions: (seq_length, batch_size, num_tags)
+            mask: (seq_length, batch_size)
+            Returns (seq_length, batch_size, num_tags)
+        Shapes if self.batch_first is True:
+            emissions: (batch_size, seq_length, num_tags)
+            mask: (batch_size, seq_length)
+            Returns (batch_size, seq_length, num_tags)
+        """
+        if self.batch_first:
+            emissions = emissions.transpose(0, 1)
+            mask = mask.transpose(0, 1)
         alpha = self._compute_log_alpha(emissions, mask, run_backwards=False)
         beta = self._compute_log_alpha(emissions, mask, run_backwards=True)
         z = torch.logsumexp(alpha[alpha.size(0)-1] + self.end_transitions, dim=1)
         prob = alpha + beta - z.view(1, -1, 1)
+        if self.batch_first:
+            prob = prob.transpose(0, 1)
         return torch.exp(prob)
 
 
