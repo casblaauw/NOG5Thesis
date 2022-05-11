@@ -211,8 +211,8 @@ class Protein:
                 start_idx = max(possible_site_idx-window_wing, 0)
                 end_idx = min(possible_site_idx+window_wing+1, len(self.protein_seq))
                 labels[start_idx:end_idx] = [1]*(end_idx - start_idx)
-        # If sites are always glycosylated, set window around site to 2
-        for possible_site_idx, (sites, seen_count) in enumerate(zip(self.seq_sites, self.seq_idx_seen_count)):
+        # If site scores are equal/above cutoff, set window around site to 2
+        for possible_site_idx, (sites, seen_count) in enumerate(zip(self.seq_sites, self.seq_idx_site_seen_count)):
             if sites is not None and len(sites) > 0 and seen_count > 0:
                 score = len(sites)/seen_count
                 if score >= cutoff:
