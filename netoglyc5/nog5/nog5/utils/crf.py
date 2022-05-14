@@ -394,7 +394,11 @@ class CRF(nn.Module):
         prob = alpha + beta - z.view(1, -1, 1)
         if self.batch_first:
             prob = prob.transpose(0, 1)
-        return torch.exp(prob)
+        prob = torch.exp(prob)
+        # Rounding errors? mean data doesn't exactly sum to 1
+        # So solve by manually normalising to sum to 1
+        prob = prob / torch.sum(prob, dim = 2, keepdim = True) 
+        return prob
 
 
     @staticmethod
