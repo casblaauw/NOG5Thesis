@@ -76,9 +76,9 @@ prediction:
     labels_transform: multi_task_save_output
 
 training:
-  early_stop: 3
+  early_stop: 10
   grace_period: 10
-  epochs: 30
+  epochs: 60
   monitor: min val_loss
   save_period: 1
   log_step: 1
@@ -88,7 +88,8 @@ training:
 optimizer:
   type: AdamW
   args:
-    lr: 1.0e-04
+    # lr: 1.0e-04
+    lr: 5.0e-05
 #    lr: 3.0e-4
 #    weight_decay: 1.0e-1
 #    momentum: 0.9
@@ -104,4 +105,4 @@ multitask_loss:
     loss_weights: [1]
     # loss_args: [{positive_weight: 0.01}]
 
-metrics: [region_fpr, region_fnr, region_acc]
+metrics: [region_f1, region_auc, region_fpr, region_fnr, region_acc]
