@@ -19,7 +19,7 @@ def fpr(pred: Tensor, labels: Tensor) -> float:
     tn = int(torch.sum(torch.logical_and(torch.eq(pred, 0), torch.eq(labels, 0))))
 
     # All true positives means no FPR
-    if (fp+tn) is 0:
+    if (fp+tn) == 0:
         fpr = float(0)
     else:
         fpr = float(fp / (fp + tn))
@@ -41,7 +41,7 @@ def fnr(pred: Tensor, labels: Tensor) -> float:
     tp = int(torch.sum(torch.logical_and(torch.eq(pred, 1), torch.eq(labels, 1))))
 
     # All true negatives means no FNR
-    if (fn+tp) is 0:
+    if (fn+tp) == 0:
         fnr = float(0)
     else:
         fnr = float(fn / (fn + tp))
@@ -87,6 +87,49 @@ def accuracy(pred: Tensor, labels: Tensor) -> float:
     """
 
     return ((pred == labels).sum() / labels.numel()).item()
+
+def precision(pred: Tensor, labels: Tensor) -> float:
+    """ Returns precision (positive predictive value)
+    Args:
+        pred: tensor with predicted values
+        labels: tensor with correct values
+    """
+    confusion_vector = pred / labels
+    true_positives = torch.sum(confusion_vector == 1).item()
+    false_positives = torch.sum(confusion_vector == float('inf')).item()
+
+    if true_positives+false_positives == 0:
+        return 1
+    else:
+        return true_positives/(true_positives+false_positives)
+
+def recall(pred: Tensor, labels: Tensor) -> float:
+    """ Returns recall (sensitivity)
+    Args:
+        pred: tensor with predicted values
+        labels: tensor with correct values
+    """
+    confusion_vector = pred / labels
+    true_positives = torch.sum(confusion_vector == 1).item()
+    false_negatives = torch.sum(confusion_vector == 0).item()
+
+    if true_positives+false_negatives == 0:
+        return 1
+    else:
+        return true_positives/(true_positives+false_negatives)
+
+def f1_score(pred: Tensor, labels: Tensor) -> float:
+    """ Returns f1 score (relatively class-balanced metric)
+    Args:
+        pred: tensor with predicted values
+        labels: tensor with correct values
+    """
+    prec = precision(pred, labels)
+    rec = recall(pred, labels)
+    if prec+rec == 0:
+        return 1
+    else:
+        return 2*(prec*rec)/(prec+rec)
 
 
 def rmse(pred: Tensor, labels: Tensor) -> float:

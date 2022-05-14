@@ -2,7 +2,7 @@ from typing import Dict
 
 import torch
 from torch import Tensor
-from nog5.output.metrics.metric_functions import fpr, mcc, pcc, mae_angle, accuracy, rmse, fnr
+from nog5.output.metrics.metric_functions import fpr, mcc, pcc, mae_angle, accuracy, rmse, fnr, f1_score
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 from nog5.output.misc import get_mask, arctan_dihedral
@@ -248,6 +248,37 @@ def region_acc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     metric = accuracy(outputs, labels)
     return metric
 
+def region_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
+    """ Returns f1 score for glycosylation regions
+    Args:
+        outputs: tensor with predicted binary labels
+        labels: tensor with correct binary labels
+        threshold: float used for cutoff when rounding to 0/1
+    """
+    mask = get_mask(labels) # Always returns seq mask
+    outputs = outputs['region'][mask == 1]
+    labels = labels['region'][mask == 1]
+
+    # metric = f1_score(y_score=outputs.cpu(), y_true=labels.cpu()) # sklearn ver
+    metric = f1_score(outputs, labels)
+    return metric
+
+def region_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
+    """ Returns area under roc score for glycosylation regions
+    Returns -1 if all labels in the batch are of one class. 
+    Args:
+        outputs: tensor with predicted probabilities
+        labels: tensor with correct binary labels
+    """
+    mask = get_mask(labels) # Always returns seq mask
+    outputs = outputs['region_probs'][:, :, 1].squeeze()[mask == 1].flatten() # Only keep probs for label = 1
+    labels = labels['region'][mask == 1].flatten()
+
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = -1
+    return metric
 
 # Secondary structure metrics for NetSurfP integration ===================
 
