@@ -39,7 +39,7 @@ class LSTMCRF(ModelBase):
         self.crf = CRF(num_tags = num_tags, batch_first = True)
 
 
-    def forward(self, x, mask, target = None, get_hidden_output=False) -> Dict[str, Tensor]:
+    def forward(self, x, mask, target = None, loss_mask = None, get_hidden_output=False) -> Dict[str, Tensor]:
         """ Forwarding logic """
 
         # Housekeeping: get individual seq lengths and max seq length (batch shape)
@@ -48,6 +48,9 @@ class LSTMCRF(ModelBase):
         max_seq_length = x.shape[1]
         mask_bool = torch.eq(mask, 1)
         start_device = x.device
+        if loss_mask is None:
+            loss_mask = mask
+        loss_mask_bool = torch.eq(loss_mask, 1)
 
         # Get LSTM score
         # Expects (batch, max_len, embed_dim), makes (batch, max_len, lstm_hidden_features) -> (batch, max_len, num_tags)
@@ -62,7 +65,7 @@ class LSTMCRF(ModelBase):
             if target is None:
                 raise ValueError("The CRF module requires true labels as argument 'target' of model.forward() when training.")
             # Expects (batch_size, seq_length, num_tags), returns a single float (sum of loglikelihoods of all sequences)
-            x = self.crf.forward(emissions = x, tags = target['region'], mask = mask_bool)
+            x = self.crf.forward(emissions = x, tags = target['region'], mask = loss_mask_bool)
             return -x # Return negative log likelihood (to minimise)
         else:
             results = {}

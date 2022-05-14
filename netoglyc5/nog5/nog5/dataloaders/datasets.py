@@ -44,6 +44,7 @@ class ZipDataset(DatasetBase):
         label['gly'] = torch.tensor(self.info[protname].get_glycosylation_labels())
         label['region'] = torch.tensor(self.info[protname].get_glycosylation_regions())
         label['seq_mask'] = torch.ones_like(label['gly'])
+        label['info_mask'] = torch.tensor(self.info[protname].get_seen_regions())
         ## Mask in the loss context indicates detected glycosylation sites
         label['glycosylation_mask'] = torch.where(label['gly'] >= 0, 1, 0) 
         label['definite_glycosylation_mask'] = torch.where(torch.eq(label['gly'], 0) | torch.eq(label['gly'], 1), 1, 0) 
@@ -52,7 +53,7 @@ class ZipDataset(DatasetBase):
 
         ## Mask in the training/model context used to indicate sequence length integer (to counteract batch padding)
         # mask = torch.tensor(len(self.info[protname].protein_seq))
-        return embed, label, torch.ones_like(label['gly'])
+        return embed, label, label['seq_mask']
 
     def custom_collate_fn(self, x: Union[torch.Tensor, List[torch.Tensor]]) -> torch.Tensor:
         # print(x[0])

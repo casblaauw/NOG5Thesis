@@ -220,6 +220,12 @@ class Protein:
                     end_idx = min(possible_site_idx+window_wing+1, len(self.protein_seq))
                     labels[start_idx:end_idx] = [2]*(end_idx - start_idx)
         return labels
+    
+    def get_seen_regions(self, window_size: int = 15, label_fill: int = 0) -> List[int]:
+        """
+        Returns binary labeled sequence (0/1), annotating regions that have data (positive or negative)
+        """
+        return [1 if seen_count+glyco_region > 0 else 0 for seen_count, glyco_region in zip(self.seq_idx_seen_count, self.get_glycosylation_labels(window_size=window_size, label_fill=label_fill))]
 
     def get_all_site_windows(self, aa_before_site: int = 15, aa_after_site: int = 15, seq_padding: str = 'X',
                              labels_padding : float = -1.0, label_type: str = 'float', label_int_threshold: float = 0.5,

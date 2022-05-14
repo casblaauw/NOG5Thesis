@@ -101,7 +101,7 @@ def region_bce_logits(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], cla
         labels: tensor with labels
     """
     
-    mask = get_mask(labels, ['unknown_mask'])
+    mask = get_mask(labels, ['info_mask', 'unknown_mask'])
 
     outputs = outputs['region_lstm'][:, :, 1].float()
     labels = labels['region'].float()
@@ -117,7 +117,7 @@ def region_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weig
         labels: tensor with labels
     """
     
-    mask = get_mask(labels, ['unknown_mask'])
+    mask = get_mask(labels, ['info_mask', 'unknown_mask'])
 
     outputs = outputs['region_probs'][:, :, 1].squeeze().float()
     labels = labels['region'].float()
