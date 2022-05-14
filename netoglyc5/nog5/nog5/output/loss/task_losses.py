@@ -94,6 +94,22 @@ def com_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights
 # Glycosylation region loss functions: 
 ## Covered by viterbi during training
 
+def region_bce_logits(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
+    """ Returns glycosylation region binary cross-entropy loss
+    Args:
+        outputs: tensor with binary glycosylation predictions (one-hot-encoded, so one dim per label type)
+        labels: tensor with labels
+    """
+    
+    mask = get_mask(labels, ['unknown_mask'])
+
+    outputs = outputs['region_lstm'][:, :, 1].float()
+    labels = labels['region'].float()
+
+    loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
+
+    return loss
+
 def region_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
     """ Returns glycosylation region binary cross-entropy loss
     Args:
@@ -103,10 +119,10 @@ def region_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weig
     
     mask = get_mask(labels, ['unknown_mask'])
 
-    outputs = outputs['region'].float()
+    outputs = outputs['region_probs'][:, :, 1].squeeze().float()
     labels = labels['region'].float()
 
-    loss = bce_logits(outputs, labels, mask, class_weights=class_weights)
+    loss = bce(outputs, labels, mask, class_weights=class_weights)
 
     return loss
 
