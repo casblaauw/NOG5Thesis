@@ -225,7 +225,7 @@ class Protein:
         """
         Returns binary labeled sequence (0/1), annotating regions that have data (positive or negative)
         """
-        return [1 if seen_count+glyco_region > 0 else 0 for seen_count, glyco_region in zip(self.seq_idx_seen_count, self.get_glycosylation_labels(window_size=window_size, label_fill=label_fill))]
+        return [1 if seen_count+glyco_region > 0 else 0 for seen_count, glyco_region in zip(self.seq_idx_seen_count, self.get_glycosylation_regions(window_size=window_size, label_fill=label_fill))]
 
     def get_all_site_windows(self, aa_before_site: int = 15, aa_after_site: int = 15, seq_padding: str = 'X',
                              labels_padding : float = -1.0, label_type: str = 'float', label_int_threshold: float = 0.5,
