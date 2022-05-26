@@ -83,7 +83,7 @@ def resume_checkpoint(resume_path: str, model: ModelBase, optimizer: module_opti
         optimizer.load_state_dict(checkpoint['optimizer'])
 
     log.info(f'Checkpoint "{resume_path}" loaded')
-    return model, optimizer, loss, checkpoint['epoch']
+    return model, optimizer, loss, checkpoint['epoch']+1
 
 
 def get_instance(module: ModuleType, name: str, config: Dict, **kwargs: Any) -> Any:
