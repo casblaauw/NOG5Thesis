@@ -59,7 +59,8 @@ class CRF(nn.Module):
             emissions: torch.Tensor,
             tags: torch.LongTensor,
             mask: Optional[torch.ByteTensor] = None,
-            reduction: str = 'sum',
+            loss_mask: Optional[torch.ByteTensor] = None,
+            reduction: str = 'mean',
     ) -> torch.Tensor:
         """Compute the conditional log likelihood of a sequence of tags given emission scores.
         Args:
@@ -70,7 +71,11 @@ class CRF(nn.Module):
                 ``(seq_length, batch_size)`` if ``batch_first`` is ``False``,
                 ``(batch_size, seq_length)`` otherwise.
             mask (`~torch.ByteTensor`): Mask tensor of size ``(seq_length, batch_size)``
+                if ``batch_first`` is ``False``, ``(batch_size, seq_length)`` otherwise. 
+                Denotes section(s) to be modeled. Must start with 1/True for each sequence.
+            loss_mask (`~torch.ByteTensor`): Loss mask tensor of size ``(seq_length, batch_size)``
                 if ``batch_first`` is ``False``, ``(batch_size, seq_length)`` otherwise.
+                Denotes section(s) to be considered when calculating log-likelihood.
             reduction: Specifies  the reduction to apply to the output:
                 ``none|sum|mean|token_mean``. ``none``: no reduction will be applied.
                 ``sum``: the output will be summed over batches. ``mean``: the output will be
@@ -89,11 +94,13 @@ class CRF(nn.Module):
             emissions = emissions.transpose(0, 1)
             tags = tags.transpose(0, 1)
             mask = mask.transpose(0, 1)
+            if loss_mask is not None:
+                loss_mask = loss_mask.transpose(0, 1)
 
         # shape: (batch_size,)
-        numerator = self._compute_score(emissions, tags, mask)
+        numerator = self._compute_score(emissions, tags, mask, loss_mask)
         # shape: (batch_size,)
-        denominator = self._compute_normalizer(emissions, mask)
+        denominator = self._compute_normalizer(emissions, mask, loss_mask)
         # shape: (batch_size,)
         llh = numerator - denominator
 
@@ -158,7 +165,7 @@ class CRF(nn.Module):
 
     def _compute_score(
             self, emissions: torch.Tensor, tags: torch.LongTensor,
-            mask: torch.ByteTensor) -> torch.Tensor:
+            mask: torch.ByteTensor, loss_mask: torch.ByteTensor = None) -> torch.Tensor:
         # emissions: (seq_length, batch_size, num_tags)
         # tags: (seq_length, batch_size)
         # mask: (seq_length, batch_size)
@@ -166,45 +173,59 @@ class CRF(nn.Module):
         assert emissions.shape[:2] == tags.shape
         assert emissions.size(2) == self.num_tags
         assert mask.shape == tags.shape
-        assert mask[0].all()
+        # assert mask[0].all()
+        if loss_mask is None:
+            loss_mask = mask
+        else:
+            # All positions in loss mask are within seq length mask
+            assert torch.eq(mask[torch.eq(loss_mask, 1)], 1).all()
+        assert loss_mask.shape == tags.shape
 
         seq_length, batch_size = tags.shape
         mask = mask.float()
+        loss_mask = loss_mask.float()
 
         # Start transition score and first emission
         # shape: (batch_size,)
-        score = self.start_transitions[tags[0]]
-        score += emissions[0, torch.arange(batch_size), tags[0]]
-
+        score = self.start_transitions[tags[0]] * loss_mask[0]
+        score += emissions[0, torch.arange(batch_size), tags[0]] * loss_mask[0]
+        
         for i in range(1, seq_length):
             # Transition score to next tag, only added if next timestep is valid (mask == 1)
             # shape: (batch_size,)
-            score += self.transitions[tags[i - 1], tags[i]] * mask[i]
+            score += self.transitions[tags[i - 1], tags[i]] * loss_mask[i]
 
             # Emission score for next tag, only added if next timestep is valid (mask == 1)
             # shape: (batch_size,)
-            score += emissions[i, torch.arange(batch_size), tags[i]] * mask[i]
+            score += emissions[i, torch.arange(batch_size), tags[i]] * loss_mask[i]
 
         # End transition score
         # shape: (batch_size,)
         seq_ends = mask.long().sum(dim=0) - 1
+        # torch.max(torch.where(torch.eq(mask, 1)), dim = 0)
         # shape: (batch_size,)
         last_tags = tags[seq_ends, torch.arange(batch_size)]
         # shape: (batch_size,)
-        score += self.end_transitions[last_tags]
+        score += self.end_transitions[last_tags] * loss_mask[seq_ends, torch.arange(batch_size)]
 
         return score
 
     def _compute_normalizer(
-            self, emissions: torch.Tensor, mask: torch.ByteTensor) -> torch.Tensor:
+            self, emissions: torch.Tensor, mask: torch.ByteTensor, loss_mask: torch.ByteTensor = None) -> torch.Tensor:
         # emissions: (seq_length, batch_size, num_tags)
         # mask: (seq_length, batch_size)
         assert emissions.dim() == 3 and mask.dim() == 2
         assert emissions.shape[:2] == mask.shape
         assert emissions.size(2) == self.num_tags
-        assert mask[0].all()
+        # assert mask[0].all()
+        if loss_mask is None:
+            loss_mask = mask
+        else:
+            # All positions in loss mask are within seq length mask
+            assert torch.eq(mask[torch.eq(loss_mask, 1)], 1).all()
 
         seq_length = emissions.size(0)
+        batch_size = emissions.size(1)
 
         # Start transition score and first emission; score has size of
         # (batch_size, num_tags) where for each batch, the j-th column stores
@@ -236,11 +257,12 @@ class CRF(nn.Module):
 
             # Set score to the next score if this timestep is valid (mask == 1)
             # shape: (batch_size, num_tags)
-            score = torch.where(torch.eq(mask[i].unsqueeze(1), 1), next_score, score)
+            score = torch.where(torch.eq(loss_mask[i].unsqueeze(1), 1), next_score, score)
 
         # End transition score
         # shape: (batch_size, num_tags)
-        score += self.end_transitions
+        seq_ends = mask.long().sum(dim=0) - 1
+        score += self.end_transitions * loss_mask[seq_ends, torch.arange(batch_size)].unsqueeze(1)
 
         # Sum (log-sum-exp) over all possible tags
         # shape: (batch_size,)
