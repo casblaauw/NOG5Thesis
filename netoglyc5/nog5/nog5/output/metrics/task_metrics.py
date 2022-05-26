@@ -104,6 +104,21 @@ def gly_fnr(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: fl
     metric = fnr(outputs, labels)
     return metric
 
+def gly_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold = 0.5) -> float:
+    """ Returns f1 score for glycosylation regions
+    Args:
+        outputs: tensor with predicted binary labels
+        labels: tensor with correct binary labels
+        threshold: float used for cutoff when rounding to 0/1
+    """
+    mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']) # Always returns seq mask
+    outputs = outputs = torch.where(outputs['gly'] >= threshold, 1, 0)[mask == 1]
+    labels = labels['gly'][mask == 1]
+
+    # metric = f1_score(y_score=outputs.cpu(), y_true=labels.cpu()) # sklearn ver
+    metric = f1_score(outputs, labels)
+    return metric
+
 def gly_definite_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     """ Returns glycosylation area under ROC solely for definite sites (0 or 1)
     Args:
@@ -278,6 +293,24 @@ def region_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
         metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
     else:
         metric = -1
+    return metric
+
+def region_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
+    """ Returns average precision score (from precision-recall curve) for glycosylation regions
+    Returns -1 if all labels in the batch are of one class. 
+    Args:
+        outputs: tensor with predicted probabilities
+        labels: tensor with correct binary labels
+    """
+    mask = get_mask(labels) # Always returns seq mask
+    outputs = outputs['region_probs'][:, :, 1].squeeze()[mask == 1].flatten() # Only keep probs for label = 1
+    labels = labels['region'][mask == 1].flatten()
+
+    # if 0 < torch.sum(labels) < torch.numel(labels):
+    #     metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    # else:
+    #     metric = -1
+    metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
     return metric
 
 # Secondary structure metrics for NetSurfP integration ===================

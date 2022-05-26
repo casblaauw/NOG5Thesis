@@ -91,6 +91,21 @@ def com_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights
     #print(loss)
     return loss
 
+def gly_bce(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], class_weights: List[str] = None) -> Tensor:
+    """ Returns glycosylation probability loss solely for definite sites (0 or 1)
+    Args:
+        outputs: tensor with glycosylation predictions
+        labels: tensor with labels
+    """
+    mask = get_mask(labels, ['definite_glycosylation_mask', 'unknown_mask'])
+
+    outputs = outputs['gly']
+    labels = labels['gly'].float()
+
+    loss = bce(outputs, labels, mask, class_weights=class_weights)
+
+    return loss
+
 # Glycosylation region loss functions: 
 ## Covered by viterbi during training
 
