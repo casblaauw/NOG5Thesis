@@ -2,7 +2,9 @@ from typing import Union, List, Sequence
 from os import PathLike
 from glyc_processing.annotation import ProteinSet
 import zipfile
+import gzip
 import pickle
+import re
 
 import pandas as pd
 import torch
@@ -20,8 +22,12 @@ class ZipDataset(DatasetBase):
         if isinstance(info, ProteinSet):
             self.info = info
         else:
-            with open(info, 'rb') as f:
-               self.info = pickle.load(f)
+            if re.search(r'\.gz', str(info)):
+                with gzip.open(info, 'rb') as f:
+                    self.info = pickle.load(f)
+            else:
+                with open(info, 'rb') as f:
+                    self.info = pickle.load(f)
 
         # Set base properties
         self.dataset_path = dataset_path
