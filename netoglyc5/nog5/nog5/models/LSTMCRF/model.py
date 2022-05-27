@@ -188,9 +188,9 @@ class LSTMCRFCNN(ModelBase):
             if target is None:
                 raise ValueError("The CRF module requires true labels as argument 'target' of model.forward() when training.")
             # Expects (batch_size, seq_length, num_tags), returns a single float (sum of loglikelihoods of all sequences)
-            crf_loss = -self.crf.forward(emissions = lstm_score, tags = target['region'], mask = mask, reduction = 'mean')
+            crf_loss = -self.crf.forward(emissions = lstm_score, tags = target['region'], mask = mask, reduction = 'mean') * 0.01
             # cnn_loss = torch.sum(F.binary_cross_entropy(site_preds, target['gly'], reduction='none') * mask)/torch.sum(mask)
-            cnn_loss = torch.sum(F.binary_cross_entropy(site_preds, target['gly'], reduction='none') * target['info_mask'])/torch.sum(target['info_mask'])
+            cnn_loss = torch.sum(F.binary_cross_entropy(site_preds, target['gly'], weight = torch.tensor([0.01, 1]), reduction='none')*target['glycosylation_mask']) / torch.sum(target['glycosylation_mask'])
             return crf_loss + cnn_loss
 
             
