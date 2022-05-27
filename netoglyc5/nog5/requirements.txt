@@ -22,4 +22,3 @@ click>=7.1.2
 fair-esm>=0.4.0 # make optional somehow b/c often not needed?
 optuna>=2.8.0
 torch>=1.10.0
-torchcrf
