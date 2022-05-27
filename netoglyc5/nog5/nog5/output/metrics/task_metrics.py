@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 from typing import Dict
 
 import torch
@@ -112,11 +113,15 @@ def gly_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold = 0.
         threshold: float used for cutoff when rounding to 0/1
     """
     mask = get_mask(labels, ['glycosylation_mask', 'unknown_mask']) # Always returns seq mask
-    outputs = outputs = torch.where(outputs['gly'] >= threshold, 1, 0)[mask == 1]
-    labels = labels['gly'][mask == 1]
+    outputs = torch.where(outputs['gly'] >= threshold, 1, 0)[mask == 1]
+    labels = torch.where(labels['gly'] >= threshold, 1, 0)[mask == 1]
 
     # metric = f1_score(y_score=outputs.cpu(), y_true=labels.cpu()) # sklearn ver
-    metric = f1_score(outputs, labels)
+    
+    if torch.sum(labels) > 0:
+        metric = f1_score(outputs, labels)
+    else:
+        metric = 1
     return metric
 
 def gly_definite_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
@@ -129,7 +134,10 @@ def gly_definite_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> f
     outputs = outputs['gly'][mask == 1]
     labels = labels['gly'][mask == 1]
 
-    metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 0
     return metric
 
 def gly_ambiguous_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
@@ -143,7 +151,10 @@ def gly_ambiguous_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], thr
     outputs = outputs['gly'][mask == 1]
     labels = torch.where(labels['gly'] >= threshold, 1, 0)[mask == 1]
 
-    metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 0
     return metric
 
 def gly_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
@@ -157,7 +168,10 @@ def gly_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: fl
     outputs = outputs['gly'][mask == 1]
     labels = torch.where(labels['gly'] >= threshold, 1, 0)[mask == 1]
 
-    metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 0
     return metric
 
 def gly_definite_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
@@ -170,7 +184,10 @@ def gly_definite_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> fl
     outputs = outputs['gly'][mask == 1]
     labels = labels['gly'][mask == 1]
 
-    metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 1
     return metric
 
 def gly_ambiguous_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
@@ -184,7 +201,10 @@ def gly_ambiguous_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], thre
     outputs = outputs['gly'][mask == 1]
     labels = torch.where(labels['gly'] >= threshold, 1, 0)[mask == 1]
 
-    metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 1
     return metric
 
 def gly_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: float = 0.5) -> float:
@@ -198,7 +218,10 @@ def gly_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold: flo
     outputs = outputs['gly'][mask == 1]
     labels = torch.where(labels['gly'] >= threshold, 1, 0)[mask == 1]
 
-    metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 1
     return metric
 
 def com_accuracy(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
@@ -263,7 +286,7 @@ def region_acc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     metric = accuracy(outputs, labels)
     return metric
 
-def region_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
+def region_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor], threshold = 0.5) -> float:
     """ Returns f1 score for glycosylation regions
     Args:
         outputs: tensor with predicted binary labels
@@ -271,7 +294,7 @@ def region_f1(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
         threshold: float used for cutoff when rounding to 0/1
     """
     mask = get_mask(labels) # Always returns seq mask
-    outputs = outputs['region'][mask == 1]
+    outputs = torch.where(outputs['region'] >= threshold, 1, 0)[mask == 1]
     labels = labels['region'][mask == 1]
 
     # metric = f1_score(y_score=outputs.cpu(), y_true=labels.cpu()) # sklearn ver
@@ -292,7 +315,7 @@ def region_auc(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     if 0 < torch.sum(labels) < torch.numel(labels):
         metric = roc_auc_score(y_score=outputs.cpu(), y_true=labels.cpu())
     else:
-        metric = -1
+        metric = 0
     return metric
 
 def region_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
@@ -306,11 +329,10 @@ def region_ap(outputs: Dict[str, Tensor], labels: Dict[str, Tensor]) -> float:
     outputs = outputs['region_probs'][:, :, 1].squeeze()[mask == 1].flatten() # Only keep probs for label = 1
     labels = labels['region'][mask == 1].flatten()
 
-    # if 0 < torch.sum(labels) < torch.numel(labels):
-    #     metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
-    # else:
-    #     metric = -1
-    metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    if 0 < torch.sum(labels) < torch.numel(labels):
+        metric = average_precision_score(y_score=outputs.cpu(), y_true=labels.cpu())
+    else:
+        metric = 1
     return metric
 
 # Secondary structure metrics for NetSurfP integration ===================
