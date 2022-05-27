@@ -48,6 +48,7 @@ class ZipDataset(DatasetBase):
         # Get labels
         label = {}
         label['gly'] = torch.tensor(self.info[protname].get_glycosylation_labels())
+        label['gly_binary'] = torch.where(label['gly'] >= 0.5, 1, 0) 
         label['region'] = torch.tensor(self.info[protname].get_glycosylation_regions())
         label['seq_mask'] = torch.ones_like(label['gly'])
         label['info_mask'] = torch.tensor(self.info[protname].get_seen_regions())
